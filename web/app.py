@@ -1,11 +1,12 @@
 # -*- coding: utf8 -*-
-from flask import Flask, render_template, request, g, redirect
+from flask import Flask, render_template, request, g, redirect, session, escape
 import hashlib
 import sqlite3
 
 DATABASE = 'database.db'
 
 app = Flask(__name__)
+app.secret_key = 'dsfjsklfjfafoshffahsfkjlsf'
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -34,6 +35,8 @@ def query_db(query, args=(), one=False, modify=False):
 
 @app.route("/")
 def hello():
+    if 'id' in session:
+        return 'Logged in as %s' % escape(session['id'])
     return render_template("login.html")
 
 @app.route("/name")
@@ -44,14 +47,18 @@ def name():
 def login():
     if request.method == 'POST':
         id = request.form['id']
-        pw = request.form['pw']
-    #if id in users:
-    #    if users[id] == hashlib.sha1(pw).hexdigest():
-    #        return "login ok"
-    #    else:
-    #        return "login fail"
-    #else:
-    #    return "login fail"
+        pw = hashlib.sha1(request.form["pw"].strip()).hexdigest()
+        sql = "select * from user where id='%s' and password='%s'" % (id, pw)
+        if query_db(sql, one=True):
+            # 로그인이 성공한 경우
+            session['id'] = id
+            return redirect("/")
+        else:
+            # 로그인이 실패한 경우
+            return "<script>alert('login fail');history.back(-1);</script>"
+    if 'id' in session:
+        return redirect("/")
+
     return render_template("login.html")
     
 
@@ -68,6 +75,9 @@ def join():
         sql = "insert into user(id, password) values('%s', '%s')" % (id, pw)
         query_db(sql, modify=True)
         return redirect("/login")
+
+    if 'id' in session:
+        return redirect("/")
 
     return render_template("join.html")
 
