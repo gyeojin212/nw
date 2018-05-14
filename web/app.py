@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from flask import Flask, render_template, request, g
+from flask import Flask, render_template, request, g, redirect
 import hashlib
 import sqlite3
 
@@ -40,17 +40,19 @@ def hello():
 def name():
     return "yeojin"
 
-@app.route("/login", methods=['post'])
+@app.route("/login", methods=['GET', 'POST'])
 def login():
-    id = request.form['id']
-    pw = request.form['pw']
-    # if id in users:
-    #     if users[id] ==hashlib.sha1(pw).hexdigest():
-    #         return "login ok"
-    #     else:
-    #         return "login fail"
-    # else:
-    #     return "login fail"
+    if request.method == 'POST':
+        id = request.form['id']
+        pw = request.form['pw']
+    #if id in users:
+    #    if users[id] == hashlib.sha1(pw).hexdigest():
+    #        return "login ok"
+    #    else:
+    #        return "login fail"
+    #else:
+    #    return "login fail"
+    return render_template("login.html")
     
 
 @app.route("/join", methods=['GET', 'POST'])
@@ -58,13 +60,15 @@ def join():
     if request.method == 'POST':
         id = request.form['id'].strip()
         pw = hashlib.sha1(request.form["pw"].strip()).hexdigest()
+
+        sql = "select * from user where id='%s'" % id
+        if query_db(sql, one=True):
+            return "<script>alert('join fail');history.back(-1);</script>"
+
         sql = "insert into user(id, password) values('%s', '%s')" % (id, pw)
         query_db(sql, modify=True)
-        #if id not in users:
-        #    users[id] = hashlib.sha1(pw).hexdigest()
-        #else:
-        #    return "duplicate!!!"
-        return "join ok"
+        return redirect("/login")
+
     return render_template("join.html")
 
 @app.route("/add")
@@ -79,20 +83,18 @@ def add(num1=None, num2=None):
 @app.route("/sub")
 @app.route("/sub/<int:num1>")
 @app.route("/sub/<int:num1>/<int:num2>")
-def sub():
-    num = int(input("num1:"))
-    num2 = int(input("num2:"))
-    result = num - num2
-    print(result)
+def sub(num1=None, num2=None):
+    if num1 is None or num2 is None:
+        return "/sub/num1/num2"
+    return str(num1 - num2)
 
 @app.route("/mul")
 @app.route("/mul/<int:num1>")
 @app.route("/mul/<int:num1>/<int:num2>")
-def multiply():
-    num = int(input("num1:"))
-    num2 = int(input("num2:"))
-    result = num * num2
-    print(result)
+def multiply(num1=None, num2=None):
+    if num1 is None or num2 is None:
+        return "/mul/num1/num2"
+    return str(num1 * num2)
 
 @app.route("/div")
 @app.route("/div/<int:num1>")
