@@ -1,9 +1,36 @@
 # -*- coding: utf8 -*-
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, g
 import hashlib
+import sqlite3
+
+DATABASE = 'database.db'
 
 app = Flask(__name__)
-users = {}
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+def query_db(query, args=(), one=False, modify=False):
+    cur = get_db().execute(query, args)
+    if modify:
+        try:
+            get_db().commit()
+            cur.close()
+        except:
+            return False
+        return True
+    rv = cur.fetchall()
+    cur.close()
+    return (rv[0] if rv else None) if one else rv
 
 @app.route("/")
 def hello():
@@ -17,23 +44,26 @@ def name():
 def login():
     id = request.form['id']
     pw = request.form['pw']
-    if id in users:
-        if users[id] == hashlib.sha1(pw).hexdigest():
-            return "login ok"
-        else:
-            return "login fail"
-    else:
-        return "login fail"
+    # if id in users:
+    #     if users[id] ==hashlib.sha1(pw).hexdigest():
+    #         return "login ok"
+    #     else:
+    #         return "login fail"
+    # else:
+    #     return "login fail"
+    
 
 @app.route("/join", methods=['GET', 'POST'])
 def join():
     if request.method == 'POST':
-        id = request.form['id']
-        pw = request.form['pw']
-        if id not in users:
-            users[id] = hashlib.sha1(pw).hexdigest()
-        else:
-            return "duplicate!!!"
+        id = request.form['id'].strip()
+        pw = hashlib.sha1(request.form["pw"].strip()).hexdigest()
+        sql = "insert into user(id, password) values('%s', '%s')" % (id, pw)
+        query_db(sql, modify=True)
+        #if id not in users:
+        #    users[id] = hashlib.sha1(pw).hexdigest()
+        #else:
+        #    return "duplicate!!!"
         return "join ok"
     return render_template("join.html")
 
