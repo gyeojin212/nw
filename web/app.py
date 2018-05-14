@@ -33,10 +33,15 @@ def query_db(query, args=(), one=False, modify=False):
     cur.close()
     return (rv[0] if rv else None) if one else rv
 
+@app.route('/logout')
+def logout():
+    session.pop('id', None)
+    return redirect('/login')
+
 @app.route("/")
 def hello():
     if 'id' in session:
-        return 'Logged in as %s' % escape(session['id'])
+        return u'로그인 완료 %s <a href="/logout">logout</a>' % escape(session['id'])
     return render_template("login.html")
 
 @app.route("/name")
