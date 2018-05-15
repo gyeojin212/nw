@@ -53,6 +53,7 @@ def login():
     if request.method == 'POST':
         id = request.form['id']
         pw = hashlib.sha1(request.form["pw"].strip()).hexdigest()
+
         sql = "select * from user where id='%s' and password='%s'" % (id, pw)
         if query_db(sql, one=True):
             # 로그인이 성공한 경우
@@ -61,11 +62,11 @@ def login():
         else:
             # 로그인이 실패한 경우
             return "<script>alert('login fail');history.back(-1);</script>"
+
     if 'id' in session:
         return redirect("/")
 
     return render_template("login.html")
-    
 
 @app.route("/join", methods=['GET', 'POST'])
 def join():
@@ -95,24 +96,18 @@ def add(num1=None, num2=None):
     return str(num1 + num2)
 
 # 인터넷 참조해서 혼자 한것(수정해야함)
-@app.route("/sub")
-@app.route("/sub/<int:num1>")
 @app.route("/sub/<int:num1>/<int:num2>")
 def sub(num1=None, num2=None):
     if num1 is None or num2 is None:
         return "/sub/num1/num2"
     return str(num1 - num2)
 
-@app.route("/mul")
-@app.route("/mul/<int:num1>")
 @app.route("/mul/<int:num1>/<int:num2>")
 def multiply(num1=None, num2=None):
     if num1 is None or num2 is None:
         return "/mul/num1/num2"
     return str(num1 * num2)
 
-@app.route("/div")
-@app.route("/div/<int:num1>")
 @app.route("/div/<int:num1>/<int:num2>")
 def divide():
     num = int(input("num1:"))
